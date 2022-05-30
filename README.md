@@ -2,6 +2,18 @@
 
 *geoseq_unordered_flatmap56* is a hash table that uses linear probing based on a geometric sequence of numbers. Its lookup times are faster than the [bytell](https://github.com/skarupke/flat_hash_map) hash table by [skarupke](https://github.com/skarupke). However, its key size is limited to 56 bits.
 
+|Function|Description|
+|--------|-----------|
+|FlatMap56* FlatMap56_create(const uint64_t initial_capacity);|Allocates and initializes a new instance of a FlatMap56 object on the heap. Returns a pointer to the new object or NULL upon failure.|
+|void FlatMap56_destroy(FlatMap56* map);|Deallocates the instance of a FlatMap56 object pointed to by *map*.|
+|float FlatMap56_load_factor(const FlatMap56* map);|Calculates and returns the current hash table load factor.|
+|uint64_t FlatMap56_bucket_count(const FlatMap56* map);|Returns the total number of buckets currently in the hash table.|
+|uint64_t FlatMap56_max_bucket_count();|Returns the maximum capacity of the hash table.|
+|uint64_t FlatMap56_size(const FlatMap56* map);|Returns the current number of elements in the hash table.|
+|uint64_t FlatMap56_lookup(const FlatMap56* map, const uint64_t key);|Finds and returns the *value* associated with *key*.|
+|uint64_t FlatMap56_remove(FlatMap56* map, const uint64_t key);|Removes the key-value pair associated with *key* and returns its corresponding *value*.|
+|bool FlatMap56_insert(FlatMap56* map, const uint64_t key, const uint64_t value);|Adds a new key-value pair to the hash table. If the hash table already contains the key, then the current value is replaced with the new value. Returns true on success or false on failure.|
+
 ## License
 
 *geoseq_unordered_flatmap56* is licensed uner the Boost Software License - Version 1.0 - August 17th, 2003.
