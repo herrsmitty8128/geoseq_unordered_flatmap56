@@ -10,7 +10,7 @@
 |uint64_t FlatMap56_bucket_count(const FlatMap56* map);|Returns the total number of buckets currently in the hash table.|
 |uint64_t FlatMap56_max_bucket_count();|Returns the maximum capacity of the hash table.|
 |uint64_t FlatMap56_size(const FlatMap56* map);|Returns the current number of elements in the hash table.|
-|uint64_t FlatMap56_lookup(const FlatMap56* map, const uint64_t key);|Finds and returns the *value* associated with *key*.|
+|uint64_t FlatMap56_lookup(const FlatMap56* map, const uint64_t key);|Attempts to find the bucket in the hash table that is associated with *key*. Returns the corresponding *value* if successful, otherwise zero is returned upon failure.|
 |uint64_t FlatMap56_remove(FlatMap56* map, const uint64_t key);|Removes the key-value pair associated with *key* and returns its corresponding *value*.|
 |bool FlatMap56_insert(FlatMap56* map, const uint64_t key, const uint64_t value);|Adds a new key-value pair to the hash table. If the hash table already contains the key, then the current value is replaced with the new value. Returns true on success or false on failure.|
 
