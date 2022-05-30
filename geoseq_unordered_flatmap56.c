@@ -45,7 +45,7 @@ struct UNORDERED_FLAT_MAP56 {
     Bucket*  buckets;
 };
 
-static inline bool initialize(UnorderedFlatMap56* map, const uint64_t capacity) {
+static inline bool initialize(FlatMap56* map, const uint64_t capacity) {
     
     // determine how many bits we need for the requested capacity
     unsigned int bits = (unsigned int)(ceil(log2(MIN(MAX(capacity, MIN_CAPACITY), MAX_CAPACITY))));
@@ -76,40 +76,40 @@ static inline bool initialize(UnorderedFlatMap56* map, const uint64_t capacity) 
     return true;
 }
 
-inline UnorderedFlatMap56* create(const uint64_t initial_capacity) {
-    UnorderedFlatMap56* map = (UnorderedFlatMap56*)calloc(1, sizeof(UnorderedFlatMap56));
+inline FlatMap56* FlatMap56_create(const uint64_t initial_capacity) {
+    FlatMap56* map = (FlatMap56*)calloc(1, sizeof(FlatMap56));
     if(!map) return NULL;
     if(!initialize(map, initial_capacity)){
-        destroy(map);
+        FlatMap56_destroy(map);
         return NULL;
     }
     return map;
 }
 
-inline void destroy(UnorderedFlatMap56* map) {
+inline void FlatMap56_destroy(FlatMap56* map) {
     if(map){
         if(map->buckets) free(map->buckets);
         free(map);
     }
 }
 
-inline float load_factor(const UnorderedFlatMap56* map) {
+inline float FlatMap56_load_factor(const FlatMap56* map) {
     return map->num_buckets == 0 ? 0.0f : (float)map->num_entries / (float)map->num_buckets;
 }
 
-inline uint64_t size(const UnorderedFlatMap56* map) {
+inline uint64_t FlatMap56_size(const FlatMap56* map) {
     return map->num_entries;
 }
 
-inline uint64_t bucket_count(const UnorderedFlatMap56* map) {
+inline uint64_t FlatMap56_bucket_count(const FlatMap56* map) {
     return map->num_buckets;
 }
 
-inline uint64_t max_bucket_count() {
+inline uint64_t FlatMap56_max_bucket_count() {
     return MAX_CAPACITY;
 }
 
-inline uint64_t lookup(const UnorderedFlatMap56* map, const uint64_t key) {
+inline uint64_t FlatMap56_lookup(const FlatMap56* map, const uint64_t key) {
     uint64_t h = HASH(map,key);
     Bucket*  b = &map->buckets[h];
     uint64_t p;
@@ -125,7 +125,7 @@ inline uint64_t lookup(const UnorderedFlatMap56* map, const uint64_t key) {
     return 0;
 }
 
-inline uint64_t extract(UnorderedFlatMap56* map, const uint64_t key) {
+inline uint64_t FlatMap56_remove(FlatMap56* map, const uint64_t key) {
         
     uint64_t h = HASH(map,key);
     Bucket*  b = &map->buckets[h];
@@ -164,7 +164,7 @@ inline uint64_t extract(UnorderedFlatMap56* map, const uint64_t key) {
     return 0;
 }
 
-static inline bool emplace_new_direct_hit(UnorderedFlatMap56* map, const uint64_t key, const uint64_t value, const uint64_t h){
+static inline bool emplace_new_direct_hit(FlatMap56* map, const uint64_t key, const uint64_t value, const uint64_t h){
 
     Bucket*  temp = NULL;
     Bucket*  empty = NULL;
@@ -207,7 +207,7 @@ static inline bool emplace_new_direct_hit(UnorderedFlatMap56* map, const uint64_
 }
 
 
-static inline bool emplace_new_indirect_hit(UnorderedFlatMap56* map, const uint64_t key, const uint64_t value, Bucket* b){
+static inline bool emplace_new_indirect_hit(FlatMap56* map, const uint64_t key, const uint64_t value, Bucket* b){
 
     Bucket*  temp = NULL;
     Bucket*  empty = NULL;
@@ -256,7 +256,7 @@ static inline bool emplace_new_indirect_hit(UnorderedFlatMap56* map, const uint6
     return false;
 }
 
-static inline bool emplace(UnorderedFlatMap56* map, const uint64_t key, const uint64_t value) {
+static inline bool emplace(FlatMap56* map, const uint64_t key, const uint64_t value) {
     uint64_t h = HASH(map,key);
     Bucket*  b = &map->buckets[h];
     if(b->next_probe == EMPTY_SLOT){  // DONE
@@ -270,8 +270,8 @@ static inline bool emplace(UnorderedFlatMap56* map, const uint64_t key, const ui
     return b->direct_hit ? emplace_new_direct_hit(map,key,value,h) : emplace_new_indirect_hit(map,key,value,b);
 }
 
-static inline bool grow(UnorderedFlatMap56* map){
-    UnorderedFlatMap56 old_map = *map;
+static inline bool grow(FlatMap56* map){
+    FlatMap56 old_map = *map;
     if(!initialize(map, old_map.num_buckets * 2)){
         *map = old_map;
         return false;
@@ -279,7 +279,7 @@ static inline bool grow(UnorderedFlatMap56* map){
     for(uint64_t i = 0; i < old_map.num_buckets; i++){
         if(old_map.buckets[i].next_probe != EMPTY_SLOT){
             if(!emplace(map, old_map.buckets[i].unique_key, old_map.buckets[i].value)){
-                destroy(map);
+                FlatMap56_destroy(map);
                 *map = old_map;
                 return false;
             }
@@ -289,7 +289,7 @@ static inline bool grow(UnorderedFlatMap56* map){
     return true;
 }
 
-inline bool insert(UnorderedFlatMap56* map, const uint64_t key, const uint64_t value) {
+inline bool FlatMap56_insert(FlatMap56* map, const uint64_t key, const uint64_t value) {
     return (!emplace(map,key,value) && (!grow(map) || !emplace(map,key,value))) ? false : true;
 }
 

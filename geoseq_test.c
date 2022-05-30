@@ -18,19 +18,19 @@ int main(){
         samples[i] = rand();
     }
 
-    UnorderedFlatMap56* map = create(0);
+    FlatMap56* map = FlatMap56_create(0);
 
     for(uint64_t i = 0; i < SAMPLE_SIZE; i++){
-        if(!insert(map, samples[i], i)){
+        if(!FlatMap56_insert(map, samples[i], i)){
             printf("Failed to insert [%ld] %ld\n", i, samples[i]);
             break;
         }
-        if(size(map) != (uint64_t)(i+1)){
-            printf("num_entries incorrect [%ld] [%ld]\n", i+1, size(map));
+        if(FlatMap56_size(map) != (uint64_t)(i+1)){
+            printf("num_entries incorrect [%ld] [%ld]\n", i+1, FlatMap56_size(map));
             break;
         }
         for(uint64_t j = 0; j < i; j++){
-            if(lookup(map,samples[j]) != j){
+            if(FlatMap56_lookup(map,samples[j]) != j){
                 printf("Failed to lookup [%ld] [%ld] %ld\n", i, j, samples[j]);
                 goto end_test;
             }
@@ -39,8 +39,8 @@ int main(){
 
     end_test:
 
-    printf("buckets = %ld, size = %ld, load factor = %f\n", bucket_count(map), size(map), load_factor(map));
+    printf("buckets = %ld, size = %ld, load factor = %f\n", FlatMap56_bucket_count(map), FlatMap56_size(map), FlatMap56_load_factor(map));
 
-    destroy(map);
+    FlatMap56_destroy(map);
     return EXIT_SUCCESS;
 }
