@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-typedef struct UNORDERED_FLAT_MAP56 flatmap56_t;
+typedef struct UNORDERED_FLATMAP56 flatmap56_t;
 flatmap56_t* flatmap56_create(const uint64_t initial_capacity);
 void flatmap56_destroy(flatmap56_t* map);
 float flatmap56_load_factor(const flatmap56_t* map);

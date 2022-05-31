@@ -9,7 +9,7 @@
 #define MAX_PROBES          128  // length of unordered_flatmap56::probes[]
 #define NO_MORE_PROBES      127  // last index of unordered_flatmap56::probes[] is reserved
 #define EMPTY_SLOT          0    // first index of unordered_flatmap56::probes[] is reserved
-#define MAX_CAPACITY        (UINT64_MAX / sizeof(Bucket))
+#define MAX_CAPACITY        (UINT64_MAX / sizeof(bucket_t))
 #define MIN_CAPACITY        128
 #define MIN(A,B)            ((A) < (B) ? (A) : (B))
 #define MAX(A,B)            ((A) > (B) ? (A) : (B))
@@ -34,15 +34,15 @@ typedef struct {
         uint64_t unique_key : 56; // unique key value
     };
     uint64_t value;
-}Bucket;
+}bucket_t;
 
-struct UNORDERED_FLAT_MAP56 {
-    uint64_t hash_shift;
-    uint64_t num_entries;
-    uint64_t num_buckets;
-    uint64_t table_mask;
-    uint64_t probes[MAX_PROBES]; // first and last element are reserved
-    Bucket*  buckets;
+struct UNORDERED_FLATMAP56 {
+    uint64_t  hash_shift;
+    uint64_t  num_entries;
+    uint64_t  num_bucket_ts;
+    uint64_t  table_mask;
+    uint64_t  probes[MAX_PROBES]; // first and last element are reserved
+    bucket_t* bucket_ts;
 };
 
 static inline bool initialize(flatmap56_t* map, const uint64_t capacity) {
@@ -64,14 +64,14 @@ static inline bool initialize(flatmap56_t* map, const uint64_t capacity) {
     // calculate the other members; DO NOT touch map->num_entries //
     map->num_entries = 0;
     map->hash_shift = 64 - bits;
-    map->num_buckets = 1ul << bits;
-    map->table_mask = map->num_buckets - 1;
+    map->num_bucket_ts = 1ul << bits;
+    map->table_mask = map->num_bucket_ts - 1;
     
-    // try to allocate an array of buckets
-    map->buckets = (Bucket*)calloc(map->num_buckets, sizeof(Bucket));
+    // try to allocate an array of bucket_ts
+    map->bucket_ts = (bucket_t*)calloc(map->num_bucket_ts, sizeof(bucket_t));
 
-    // if we failed to allocate an array of buckets, then put the old map back and return
-    if(map->buckets == NULL) return false;
+    // if we failed to allocate an array of bucket_ts, then put the old map back and return
+    if(map->bucket_ts == NULL) return false;
 
     // return to the caller
     return true;
@@ -89,30 +89,30 @@ inline flatmap56_t* flatmap56_create(const uint64_t initial_capacity) {
 
 inline void flatmap56_destroy(flatmap56_t* map) {
     if(map){
-        if(map->buckets) free(map->buckets);
+        if(map->bucket_ts) free(map->bucket_ts);
         free(map);
     }
 }
 
 inline float flatmap56_load_factor(const flatmap56_t* map) {
-    return map->num_buckets == 0 ? 0.0f : (float)map->num_entries / (float)map->num_buckets;
+    return map->num_bucket_ts == 0 ? 0.0f : (float)map->num_entries / (float)map->num_bucket_ts;
 }
 
 inline uint64_t flatmap56_size(const flatmap56_t* map) {
     return map->num_entries;
 }
 
-inline uint64_t flatmap56_bucket_count(const flatmap56_t* map) {
-    return map->num_buckets;
+inline uint64_t flatmap56_bucket_t_count(const flatmap56_t* map) {
+    return map->num_bucket_ts;
 }
 
-inline uint64_t flatmap56_max_bucket_count() {
+inline uint64_t flatmap56_max_bucket_t_count() {
     return MAX_CAPACITY;
 }
 
 inline uint64_t flatmap56_lookup(const flatmap56_t* map, const uint64_t key) {
     uint64_t h = HASH(map,key);
-    Bucket*  b = &map->buckets[h];
+    bucket_t*  b = &map->bucket_ts[h];
     uint64_t p;
     if(b->direct_hit){
         for(;;){
@@ -120,7 +120,7 @@ inline uint64_t flatmap56_lookup(const flatmap56_t* map, const uint64_t key) {
             p = b->next_probe;
             if(p == NO_MORE_PROBES) break;
             p = CALC_INDEX(map,h,p);
-            b = &map->buckets[p];
+            b = &map->bucket_ts[p];
         }
     }
     return 0;
@@ -129,8 +129,8 @@ inline uint64_t flatmap56_lookup(const flatmap56_t* map, const uint64_t key) {
 inline uint64_t flatmap56_remove(flatmap56_t* map, const uint64_t key) {
         
     uint64_t h = HASH(map,key);
-    Bucket*  b = &map->buckets[h];
-    Bucket*  b2 = NULL;
+    bucket_t*  b = &map->bucket_ts[h];
+    bucket_t*  b2 = NULL;
     uint64_t p,v;
     
     if(b->direct_hit){
@@ -138,27 +138,27 @@ inline uint64_t flatmap56_remove(flatmap56_t* map, const uint64_t key) {
             if(b->unique_key == key){
                 v = b->value;             // save the value so we can return it later
                 p = b->next_probe;        // get the next probe index
-                if(p == NO_MORE_PROBES){  // if there aren't any subsequent buckets
-                    // b2 points to the previous bucket if it's not the first iteration of the loop
+                if(p == NO_MORE_PROBES){  // if there aren't any subsequent bucket_ts
+                    // b2 points to the previous bucket_t if it's not the first iteration of the loop
                     if(b2) b2->next_probe = NO_MORE_PROBES;
-                    memset(b, 0, sizeof(Bucket));
+                    memset(b, 0, sizeof(bucket_t));
                 }
                 else{
-                    // set b2 to point to the next bucket
+                    // set b2 to point to the next bucket_t
                     p = CALC_INDEX(map,h,p);
-                    b2 = &map->buckets[p];
+                    b2 = &map->bucket_ts[p];
                     b->next_probe = b2->next_probe;
                     b->unique_key = b2->unique_key;
                     b->value = b2->value;
-                    memset(b2, 0, sizeof(Bucket));
+                    memset(b2, 0, sizeof(bucket_t));
                 }
                 return v;       // return the value
             }
-            b2 = b;             // remember the previous bucket
-            p = b->next_probe;  // goto the next bucket...
+            b2 = b;             // remember the previous bucket_t
+            p = b->next_probe;  // goto the next bucket_t...
             if(p == NO_MORE_PROBES) break;
             p = CALC_INDEX(map,h,p);
-            b = &map->buckets[p];
+            b = &map->bucket_ts[p];
         }
     }
 
@@ -167,14 +167,14 @@ inline uint64_t flatmap56_remove(flatmap56_t* map, const uint64_t key) {
 
 static inline bool emplace_new_direct_hit(flatmap56_t* map, const uint64_t key, const uint64_t value, const uint64_t h){
 
-    Bucket*  temp = NULL;
-    Bucket*  empty = NULL;
-    Bucket*  predecessor = NULL;
+    bucket_t*  temp = NULL;
+    bucket_t*  empty = NULL;
+    bucket_t*  predecessor = NULL;
     uint8_t  x, y, z; 
 
     for(x = 0; x < 127; x = z){
             
-        temp = &map->buckets[CALC_INDEX(map,h,x)];
+        temp = &map->bucket_ts[CALC_INDEX(map,h,x)];
         
         if(temp->unique_key == key){
             temp->value = value;
@@ -185,9 +185,9 @@ static inline bool emplace_new_direct_hit(flatmap56_t* map, const uint64_t key, 
 
         if(!empty){
             for(y = x + 1; y < z; y++){
-                if(map->buckets[CALC_INDEX(map,h,y)].next_probe == EMPTY_SLOT){
+                if(map->bucket_ts[CALC_INDEX(map,h,y)].next_probe == EMPTY_SLOT){
                     predecessor = temp;
-                    empty = &map->buckets[CALC_INDEX(map,h,y)];
+                    empty = &map->bucket_ts[CALC_INDEX(map,h,y)];
                     break;
                 }
             }
@@ -208,31 +208,31 @@ static inline bool emplace_new_direct_hit(flatmap56_t* map, const uint64_t key, 
 }
 
 
-static inline bool emplace_new_indirect_hit(flatmap56_t* map, const uint64_t key, const uint64_t value, Bucket* b){
+static inline bool emplace_new_indirect_hit(flatmap56_t* map, const uint64_t key, const uint64_t value, bucket_t* b){
 
-    Bucket*  temp = NULL;
-    Bucket*  empty = NULL;
-    Bucket*  predecessor = NULL;
+    bucket_t*  temp = NULL;
+    bucket_t*  empty = NULL;
+    bucket_t*  predecessor = NULL;
     uint8_t  x, y, z;
     
     uint64_t h2 = HASH(map,b->unique_key);
 
     for(x = 0; x < 127; x = z){
         
-        temp = &map->buckets[CALC_INDEX(map,h2,x)];
+        temp = &map->bucket_ts[CALC_INDEX(map,h2,x)];
         z = temp->next_probe;
         
         if(!predecessor){
-            if(b == &map->buckets[CALC_INDEX(map,h2,z)]){
+            if(b == &map->bucket_ts[CALC_INDEX(map,h2,z)]){
                 predecessor = temp;
             }
         }
                         
         if(!empty){
             for(y = x + 1; y < z; y++){
-                if(map->buckets[CALC_INDEX(map,h2,y)].next_probe == EMPTY_SLOT){
+                if(map->bucket_ts[CALC_INDEX(map,h2,y)].next_probe == EMPTY_SLOT){
                     // add the empty slot to the list
-                    empty = &(map->buckets[CALC_INDEX(map,h2,y)]);
+                    empty = &(map->bucket_ts[CALC_INDEX(map,h2,y)]);
                     empty->direct_hit = 0;
                     empty->next_probe = z;
                     empty->unique_key = b->unique_key;
@@ -259,7 +259,7 @@ static inline bool emplace_new_indirect_hit(flatmap56_t* map, const uint64_t key
 
 static inline bool emplace(flatmap56_t* map, const uint64_t key, const uint64_t value) {
     uint64_t h = HASH(map,key);
-    Bucket*  b = &map->buckets[h];
+    bucket_t*  b = &map->bucket_ts[h];
     if(b->next_probe == EMPTY_SLOT){  // DONE
         b->unique_key = key;
         b->next_probe = NO_MORE_PROBES;
@@ -273,20 +273,20 @@ static inline bool emplace(flatmap56_t* map, const uint64_t key, const uint64_t 
 
 static inline bool grow(flatmap56_t* map){
     flatmap56_t old_map = *map;
-    if(!initialize(map, old_map.num_buckets * 2)){
+    if(!initialize(map, old_map.num_bucket_ts * 2)){
         *map = old_map;
         return false;
     }
-    for(uint64_t i = 0; i < old_map.num_buckets; i++){
-        if(old_map.buckets[i].next_probe != EMPTY_SLOT){
-            if(!emplace(map, old_map.buckets[i].unique_key, old_map.buckets[i].value)){
+    for(uint64_t i = 0; i < old_map.num_bucket_ts; i++){
+        if(old_map.bucket_ts[i].next_probe != EMPTY_SLOT){
+            if(!emplace(map, old_map.bucket_ts[i].unique_key, old_map.bucket_ts[i].value)){
                 flatmap56_destroy(map);
                 *map = old_map;
                 return false;
             }
         }
     }
-    if(old_map.buckets) free(old_map.buckets);
+    if(old_map.bucket_ts) free(old_map.bucket_ts);
     return true;
 }
 
