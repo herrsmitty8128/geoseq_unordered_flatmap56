@@ -23,16 +23,16 @@
 extern "C" {
 #endif
 
-typedef struct UNORDERED_FLAT_MAP56 FlatMap56;
-FlatMap56* FlatMap56_create(const uint64_t initial_capacity);
-void FlatMap56_destroy(FlatMap56* map);
-float FlatMap56_load_factor(const FlatMap56* map);
-uint64_t FlatMap56_bucket_count(const FlatMap56* map);
-uint64_t FlatMap56_max_bucket_count();
-uint64_t FlatMap56_size(const FlatMap56* map);
-uint64_t FlatMap56_lookup(const FlatMap56* map, const uint64_t key);
-uint64_t FlatMap56_remove(FlatMap56* map, const uint64_t key);
-bool FlatMap56_insert(FlatMap56* map, const uint64_t key, const uint64_t value);
+typedef struct UNORDERED_FLAT_MAP56 flatmap56_t;
+flatmap56_t* flatmap56_create(const uint64_t initial_capacity);
+void flatmap56_destroy(flatmap56_t* map);
+float flatmap56_load_factor(const flatmap56_t* map);
+uint64_t flatmap56_bucket_count(const flatmap56_t* map);
+uint64_t flatmap56_max_bucket_count();
+uint64_t flatmap56_size(const flatmap56_t* map);
+uint64_t flatmap56_lookup(const flatmap56_t* map, const uint64_t key);
+uint64_t flatmap56_remove(flatmap56_t* map, const uint64_t key);
+bool flatmap56_insert(flatmap56_t* map, const uint64_t key, const uint64_t value);
 
 #ifdef __cplusplus
 };

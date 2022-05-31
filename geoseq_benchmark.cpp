@@ -13,36 +13,36 @@
 uint64_t myarray[MAX_COUNT];
 
 
-static void geoseq_FlatMap56_insert(benchmark::State& state) {
+static void geoseq_flatmap56_insert(benchmark::State& state) {
     size_t range = state.range(0);
-    FlatMap56* map = FlatMap56_create(0);
+    flatmap56_t* map = flatmap56_create(0);
     for (auto _ : state){
         for(size_t i = 0; i < range; i++){
-            FlatMap56_insert(map, myarray[i], i);
+            flatmap56_insert(map, myarray[i], i);
         }
     }
-    state.counters["load_factor"] = FlatMap56_load_factor(map);
+    state.counters["load_factor"] = flatmap56_load_factor(map);
     state.counters["ns_per_entry"] = benchmark::Counter((double)(range * state.iterations()) / (double)1000000000.0, benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
-    FlatMap56_destroy(map);
+    flatmap56_destroy(map);
 }
 
-BENCHMARK(geoseq_FlatMap56_insert)->Name("geoseq_FlatMap56_insert")->DenseRange(10000, MAX_COUNT, 25000)->Unit(benchmark::kNanosecond);
+BENCHMARK(geoseq_flatmap56_insert)->Name("geoseq_flatmap56_insert")->DenseRange(10000, MAX_COUNT, 25000)->Unit(benchmark::kNanosecond);
 
 
-static void geoseq_FlatMap56_lookup(benchmark::State& state) {
+static void geoseq_flatmap56_lookup(benchmark::State& state) {
     size_t range = state.range(0);
-    FlatMap56* map = FlatMap56_create(0);
-    for(size_t i = 0; i < range; i++) FlatMap56_insert(map, myarray[i], i);
+    flatmap56_t* map = flatmap56_create(0);
+    for(size_t i = 0; i < range; i++) flatmap56_insert(map, myarray[i], i);
     for (auto _ : state){
         for(size_t i = 0; i < range; i++)
-            benchmark::DoNotOptimize(FlatMap56_lookup(map, myarray[i]));
+            benchmark::DoNotOptimize(flatmap56_lookup(map, myarray[i]));
     }
-    state.counters["load_factor"] = FlatMap56_load_factor(map);
+    state.counters["load_factor"] = flatmap56_load_factor(map);
     state.counters["ns_per_entry"] = benchmark::Counter((double)(range * state.iterations()) / (double)1000000000.0, benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
-    FlatMap56_destroy(map);
+    flatmap56_destroy(map);
 }
 
-BENCHMARK(geoseq_FlatMap56_lookup)->Name("geoseq_FlatMap56_lookup")->DenseRange(10000, MAX_COUNT, 25000)->Unit(benchmark::kNanosecond);
+BENCHMARK(geoseq_flatmap56_lookup)->Name("geoseq_flatmap56_lookup")->DenseRange(10000, MAX_COUNT, 25000)->Unit(benchmark::kNanosecond);
 
 
 
