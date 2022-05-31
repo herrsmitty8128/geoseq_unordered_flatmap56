@@ -111,9 +111,9 @@ inline uint64_t flatmap56_max_bucket_count() {
 }
 
 inline uint64_t flatmap56_lookup(const flatmap56_t* map, const uint64_t key) {
-    uint64_t h = HASH(map,key);
-    bucket_t*  b = &map->buckets[h];
-    uint64_t p;
+    uint64_t  h = HASH(map,key);
+    bucket_t* b = &map->buckets[h];
+    uint64_t  p;
     if(b->direct_hit){
         for(;;){
             if(b->unique_key == key) return b->value;
@@ -128,10 +128,10 @@ inline uint64_t flatmap56_lookup(const flatmap56_t* map, const uint64_t key) {
 
 inline uint64_t flatmap56_remove(flatmap56_t* map, const uint64_t key) {
         
-    uint64_t h = HASH(map,key);
-    bucket_t*  b = &map->buckets[h];
-    bucket_t*  b2 = NULL;
-    uint64_t p,v;
+    uint64_t  h = HASH(map,key);
+    bucket_t* b = &map->buckets[h];
+    bucket_t* b2 = NULL;
+    uint64_t  p,v;
     
     if(b->direct_hit){
         for(;;){
@@ -145,11 +145,8 @@ inline uint64_t flatmap56_remove(flatmap56_t* map, const uint64_t key) {
                 }
                 else{
                     // set b2 to point to the next bucket_t
-                    p = CALC_INDEX(map,h,p);
-                    b2 = &map->buckets[p];
-                    b->next_probe = b2->next_probe;
-                    b->unique_key = b2->unique_key;
-                    b->value = b2->value;
+                    b2 = &map->buckets[CALC_INDEX(map,h,p)];
+                    memcpy(b, b2, sizeof(bucket_t));
                     memset(b2, 0, sizeof(bucket_t));
                 }
                 return v;       // return the value
@@ -167,10 +164,10 @@ inline uint64_t flatmap56_remove(flatmap56_t* map, const uint64_t key) {
 
 static inline bool emplace_new_direct_hit(flatmap56_t* map, const uint64_t key, const uint64_t value, const uint64_t h){
 
-    bucket_t*  temp = NULL;
-    bucket_t*  empty = NULL;
-    bucket_t*  predecessor = NULL;
-    uint8_t  x, y, z; 
+    bucket_t* temp = NULL;
+    bucket_t* empty = NULL;
+    bucket_t* predecessor = NULL;
+    uint8_t   x, y, z; 
 
     for(x = 0; x < 127; x = z){
             
@@ -210,10 +207,10 @@ static inline bool emplace_new_direct_hit(flatmap56_t* map, const uint64_t key, 
 
 static inline bool emplace_new_indirect_hit(flatmap56_t* map, const uint64_t key, const uint64_t value, bucket_t* b){
 
-    bucket_t*  temp = NULL;
-    bucket_t*  empty = NULL;
-    bucket_t*  predecessor = NULL;
-    uint8_t  x, y, z;
+    bucket_t* temp = NULL;
+    bucket_t* empty = NULL;
+    bucket_t* predecessor = NULL;
+    uint8_t   x, y, z;
     
     uint64_t h2 = HASH(map,b->unique_key);
 
@@ -258,8 +255,8 @@ static inline bool emplace_new_indirect_hit(flatmap56_t* map, const uint64_t key
 }
 
 static inline bool emplace(flatmap56_t* map, const uint64_t key, const uint64_t value) {
-    uint64_t h = HASH(map,key);
-    bucket_t*  b = &map->buckets[h];
+    uint64_t  h = HASH(map,key);
+    bucket_t* b = &map->buckets[h];
     if(b->next_probe == EMPTY_SLOT){  // DONE
         b->unique_key = key;
         b->next_probe = NO_MORE_PROBES;
