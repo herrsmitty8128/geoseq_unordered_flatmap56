@@ -42,7 +42,7 @@ struct UNORDERED_FLATMAP56 {
     uint64_t  num_bucket_ts;
     uint64_t  table_mask;
     uint64_t  probes[MAX_PROBES]; // first and last element are reserved
-    bucket_t* bucket_ts;
+    bucket_t* buckets;
 };
 
 static inline bool initialize(flatmap56_t* map, const uint64_t capacity) {
@@ -68,10 +68,10 @@ static inline bool initialize(flatmap56_t* map, const uint64_t capacity) {
     map->table_mask = map->num_bucket_ts - 1;
     
     // try to allocate an array of bucket_ts
-    map->bucket_ts = (bucket_t*)calloc(map->num_bucket_ts, sizeof(bucket_t));
+    map->buckets = (bucket_t*)calloc(map->num_bucket_ts, sizeof(bucket_t));
 
     // if we failed to allocate an array of bucket_ts, then put the old map back and return
-    if(map->bucket_ts == NULL) return false;
+    if(map->buckets == NULL) return false;
 
     // return to the caller
     return true;
@@ -89,7 +89,7 @@ inline flatmap56_t* flatmap56_create(const uint64_t initial_capacity) {
 
 inline void flatmap56_destroy(flatmap56_t* map) {
     if(map){
-        if(map->bucket_ts) free(map->bucket_ts);
+        if(map->buckets) free(map->buckets);
         free(map);
     }
 }
@@ -112,7 +112,7 @@ inline uint64_t flatmap56_max_bucket_t_count() {
 
 inline uint64_t flatmap56_lookup(const flatmap56_t* map, const uint64_t key) {
     uint64_t h = HASH(map,key);
-    bucket_t*  b = &map->bucket_ts[h];
+    bucket_t*  b = &map->buckets[h];
     uint64_t p;
     if(b->direct_hit){
         for(;;){
@@ -120,7 +120,7 @@ inline uint64_t flatmap56_lookup(const flatmap56_t* map, const uint64_t key) {
             p = b->next_probe;
             if(p == NO_MORE_PROBES) break;
             p = CALC_INDEX(map,h,p);
-            b = &map->bucket_ts[p];
+            b = &map->buckets[p];
         }
     }
     return 0;
@@ -129,7 +129,7 @@ inline uint64_t flatmap56_lookup(const flatmap56_t* map, const uint64_t key) {
 inline uint64_t flatmap56_remove(flatmap56_t* map, const uint64_t key) {
         
     uint64_t h = HASH(map,key);
-    bucket_t*  b = &map->bucket_ts[h];
+    bucket_t*  b = &map->buckets[h];
     bucket_t*  b2 = NULL;
     uint64_t p,v;
     
@@ -146,7 +146,7 @@ inline uint64_t flatmap56_remove(flatmap56_t* map, const uint64_t key) {
                 else{
                     // set b2 to point to the next bucket_t
                     p = CALC_INDEX(map,h,p);
-                    b2 = &map->bucket_ts[p];
+                    b2 = &map->buckets[p];
                     b->next_probe = b2->next_probe;
                     b->unique_key = b2->unique_key;
                     b->value = b2->value;
@@ -158,7 +158,7 @@ inline uint64_t flatmap56_remove(flatmap56_t* map, const uint64_t key) {
             p = b->next_probe;  // goto the next bucket_t...
             if(p == NO_MORE_PROBES) break;
             p = CALC_INDEX(map,h,p);
-            b = &map->bucket_ts[p];
+            b = &map->buckets[p];
         }
     }
 
@@ -174,7 +174,7 @@ static inline bool emplace_new_direct_hit(flatmap56_t* map, const uint64_t key, 
 
     for(x = 0; x < 127; x = z){
             
-        temp = &map->bucket_ts[CALC_INDEX(map,h,x)];
+        temp = &map->buckets[CALC_INDEX(map,h,x)];
         
         if(temp->unique_key == key){
             temp->value = value;
@@ -185,9 +185,9 @@ static inline bool emplace_new_direct_hit(flatmap56_t* map, const uint64_t key, 
 
         if(!empty){
             for(y = x + 1; y < z; y++){
-                if(map->bucket_ts[CALC_INDEX(map,h,y)].next_probe == EMPTY_SLOT){
+                if(map->buckets[CALC_INDEX(map,h,y)].next_probe == EMPTY_SLOT){
                     predecessor = temp;
-                    empty = &map->bucket_ts[CALC_INDEX(map,h,y)];
+                    empty = &map->buckets[CALC_INDEX(map,h,y)];
                     break;
                 }
             }
@@ -219,20 +219,20 @@ static inline bool emplace_new_indirect_hit(flatmap56_t* map, const uint64_t key
 
     for(x = 0; x < 127; x = z){
         
-        temp = &map->bucket_ts[CALC_INDEX(map,h2,x)];
+        temp = &map->buckets[CALC_INDEX(map,h2,x)];
         z = temp->next_probe;
         
         if(!predecessor){
-            if(b == &map->bucket_ts[CALC_INDEX(map,h2,z)]){
+            if(b == &map->buckets[CALC_INDEX(map,h2,z)]){
                 predecessor = temp;
             }
         }
                         
         if(!empty){
             for(y = x + 1; y < z; y++){
-                if(map->bucket_ts[CALC_INDEX(map,h2,y)].next_probe == EMPTY_SLOT){
+                if(map->buckets[CALC_INDEX(map,h2,y)].next_probe == EMPTY_SLOT){
                     // add the empty slot to the list
-                    empty = &(map->bucket_ts[CALC_INDEX(map,h2,y)]);
+                    empty = &(map->buckets[CALC_INDEX(map,h2,y)]);
                     empty->direct_hit = 0;
                     empty->next_probe = z;
                     empty->unique_key = b->unique_key;
@@ -259,7 +259,7 @@ static inline bool emplace_new_indirect_hit(flatmap56_t* map, const uint64_t key
 
 static inline bool emplace(flatmap56_t* map, const uint64_t key, const uint64_t value) {
     uint64_t h = HASH(map,key);
-    bucket_t*  b = &map->bucket_ts[h];
+    bucket_t*  b = &map->buckets[h];
     if(b->next_probe == EMPTY_SLOT){  // DONE
         b->unique_key = key;
         b->next_probe = NO_MORE_PROBES;
@@ -278,15 +278,15 @@ static inline bool grow(flatmap56_t* map){
         return false;
     }
     for(uint64_t i = 0; i < old_map.num_bucket_ts; i++){
-        if(old_map.bucket_ts[i].next_probe != EMPTY_SLOT){
-            if(!emplace(map, old_map.bucket_ts[i].unique_key, old_map.bucket_ts[i].value)){
+        if(old_map.buckets[i].next_probe != EMPTY_SLOT){
+            if(!emplace(map, old_map.buckets[i].unique_key, old_map.buckets[i].value)){
                 flatmap56_destroy(map);
                 *map = old_map;
                 return false;
             }
         }
     }
-    if(old_map.bucket_ts) free(old_map.bucket_ts);
+    if(old_map.buckets) free(old_map.buckets);
     return true;
 }
 
