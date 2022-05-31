@@ -102,11 +102,11 @@ inline uint64_t flatmap56_size(const flatmap56_t* map) {
     return map->num_entries;
 }
 
-inline uint64_t flatmap56_bucket_t_count(const flatmap56_t* map) {
+inline uint64_t flatmap56_bucket_count(const flatmap56_t* map) {
     return map->num_bucket_ts;
 }
 
-inline uint64_t flatmap56_max_bucket_t_count() {
+inline uint64_t flatmap56_max_bucket_count() {
     return MAX_CAPACITY;
 }
 
@@ -268,7 +268,9 @@ static inline bool emplace(flatmap56_t* map, const uint64_t key, const uint64_t 
         map->num_entries++;
         return true;
     }
-    return b->direct_hit ? emplace_new_direct_hit(map,key,value,h) : emplace_new_indirect_hit(map,key,value,b);
+    if(b->direct_hit) return emplace_new_direct_hit(map,key,value,h);
+
+    return emplace_new_indirect_hit(map,key,value,b);
 }
 
 static inline bool grow(flatmap56_t* map){
