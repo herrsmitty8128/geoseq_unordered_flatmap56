@@ -168,7 +168,6 @@ static inline bool emplace_new_direct_hit(flatmap56_t* map, const uint64_t key, 
     return false;
 }
 
-
 static inline bool emplace_new_indirect_hit(flatmap56_t* map, const uint64_t key, const uint64_t value, bucket_t* b){
 
     bucket_t* temp = NULL;
@@ -193,7 +192,7 @@ static inline bool emplace_new_indirect_hit(flatmap56_t* map, const uint64_t key
             for(y = x + 1; y < z; y++){
                 if(map->buckets[CALC_INDEX(map,h2,y)].next_probe == EMPTY_SLOT){
                     // add the empty slot to the list
-                    empty = &(map->buckets[CALC_INDEX(map,h2,y)]);
+                    empty = &map->buckets[CALC_INDEX(map,h2,y)];
                     empty->direct_hit = 0;
                     empty->next_probe = z;
                     empty->unique_key = b->unique_key;
@@ -229,9 +228,7 @@ static inline bool emplace(flatmap56_t* map, const uint64_t key, const uint64_t 
         map->num_entries++;
         return true;
     }
-
     if(b->direct_hit) return emplace_new_direct_hit(map,key,value,h);
-
     return emplace_new_indirect_hit(map,key,value,b);
 }
 
@@ -282,6 +279,7 @@ inline uint64_t flatmap56_remove(flatmap56_t* map, const uint64_t key) {
                     memset(b2, 0, sizeof(bucket_t));
                 }
                 map->num_entries--;
+                // shrink the table if the number of entries is less than 37.5% of the table size
                 if(map->num_entries < (map->num_buckets >> 2) + (map->num_buckets >> 3)) resize(map,false);
                 return v;       // return the value
             }
