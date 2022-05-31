@@ -149,6 +149,7 @@ inline uint64_t flatmap56_remove(flatmap56_t* map, const uint64_t key) {
                     memcpy(b, b2, sizeof(bucket_t));
                     memset(b2, 0, sizeof(bucket_t));
                 }
+                map->num_entries--;
                 return v;       // return the value
             }
             b2 = b;             // remember the previous bucket_t
