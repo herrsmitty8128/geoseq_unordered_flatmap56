@@ -4,6 +4,9 @@
 //    (See accompanying file LICENSE_1_0.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
 #include "geoseq_unordered_flatmap56.h"
 
 #define MAX_PROBES          128  // length of unordered_flatmap56::probes[]
@@ -108,6 +111,10 @@ inline uint64_t flatmap56_bucket_count(const flatmap56_t* map) {
 
 inline uint64_t flatmap56_max_bucket_count() {
     return MAX_CAPACITY;
+}
+
+inline uint64_t flatmap56_min_bucket_count() {
+    return MIN_CAPACITY;
 }
 
 inline uint64_t flatmap56_lookup(const flatmap56_t* map, const uint64_t key) {
