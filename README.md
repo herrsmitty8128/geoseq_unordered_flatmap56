@@ -4,15 +4,16 @@
 
 |Function|Description|
 |--------|-----------|
-|flatmap56_t* flatmap56_create(const uint64_t initial_capacity);|Allocates and initializes a new instance of a flatmap56_t object on the heap. Returns a pointer to the new object or NULL upon failure.|
+|flatmap56_t* flatmap56_create(const uint64_t initial_capacity, const uint64_t value_size);|Allocates and initializes a flatmap56_t object on the heap.|
 |void flatmap56_destroy(flatmap56_t* map);|Deallocates the instance of a flatmap56_t object pointed to by *map*.|
-|float flatmap56_load_factor(const flatmap56_t* map);|Calculates and returns the current hash table load factor.|
-|uint64_t flatmap56_bucket_count(const flatmap56_t* map);|Returns the total number of buckets currently in the hash table.|
-|uint64_t flatmap56_max_bucket_count();|Returns the maximum capacity of the hash table.|
-|uint64_t flatmap56_size(const flatmap56_t* map);|Returns the current number of elements in the hash table.|
-|uint64_t flatmap56_lookup(const flatmap56_t* map, const uint64_t key);|Attempts to find the bucket in the hash table that is associated with *key*. Returns the corresponding *value* if successful, otherwise zero is returned upon failure.|
-|uint64_t flatmap56_remove(flatmap56_t* map, const uint64_t key);|Removes the key-value pair associated with *key* and returns its corresponding *value*.|
-|bool flatmap56_insert(flatmap56_t* map, const uint64_t key, const uint64_t value);|Adds a new key-value pair to the hash table. If the hash table already contains the key, then the current value is replaced with the new value. Returns true on success or false on failure.|
+|float flatmap56_load_factor(const flatmap56_t* map);|Calcluates and returns the current load factor of the table.|
+|uint64_t flatmap56_bucket_count(const flatmap56_t* map);|Returns the current number of buckets in the hash table.|
+|uint64_t flatmap56_max_bucket_count(const flatmap56_t* map);|Returns the maximum number of buckets supported by this implementation.|
+|uint64_t flatmap56_min_bucket_count();|Returns the minimum number of buckets supported by this implementation.|
+|uint64_t flatmap56_size(const flatmap56_t* map);|Returns the current number of elements in the table.|
+|void* flatmap56_lookup(const flatmap56_t* map, const uint64_t key);|Attempts to find the bucket in the hash table that is associated with key. Returns a pointer to the corresponding value if successful, otherwise NULL is returned upon failure.|
+|void* flatmap56_insert(flatmap56_t* map, const uint64_t key);|Inserts a new key-value pair into the table. If the table already contains the key, then the current value is replaced with the new value. Regardless, a pointer to the value in the table is returned on success. Otherwise, NULL is returned on failure.|
+|bool flatmap56_remove(flatmap56_t* map, const uint64_t key, void* value);|Removes the key-value pair associated with key. If the key exists in the table then the corresponding value is copied into the buffer before it is removed. Returns true if the key exists in the table, otherwise false is returned.|
 
 ## License
 

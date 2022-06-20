@@ -15,10 +15,11 @@ uint64_t myarray[MAX_COUNT];
 
 static void geoseq_flatmap56_insert(benchmark::State& state) {
     size_t range = state.range(0);
-    flatmap56_t* map = flatmap56_create(0);
+    flatmap56_t* map = flatmap56_create(0,sizeof(uint64_t));
     for (auto _ : state){
         for(size_t i = 0; i < range; i++){
-            flatmap56_insert(map, myarray[i], i);
+            uint64_t* v = (uint64_t*)flatmap56_insert(map, myarray[i]);
+            if(v) *v = myarray[i];
         }
     }
     state.counters["load_factor"] = flatmap56_load_factor(map);
@@ -31,8 +32,11 @@ BENCHMARK(geoseq_flatmap56_insert)->Name("geoseq_flatmap56_insert")->DenseRange(
 
 static void geoseq_flatmap56_lookup(benchmark::State& state) {
     size_t range = state.range(0);
-    flatmap56_t* map = flatmap56_create(0);
-    for(size_t i = 0; i < range; i++) flatmap56_insert(map, myarray[i], i);
+    flatmap56_t* map = flatmap56_create(0,sizeof(uint64_t));
+    for(size_t i = 0; i < range; i++){
+        uint64_t* v = (uint64_t*)flatmap56_insert(map, myarray[i]);
+        if(v) *v = myarray[i];
+    }
     for (auto _ : state){
         for(size_t i = 0; i < range; i++)
             benchmark::DoNotOptimize(flatmap56_lookup(map, myarray[i]));
@@ -45,25 +49,43 @@ static void geoseq_flatmap56_lookup(benchmark::State& state) {
 BENCHMARK(geoseq_flatmap56_lookup)->Name("geoseq_flatmap56_lookup")->DenseRange(10000, MAX_COUNT, 25000)->Unit(benchmark::kNanosecond);
 
 
+static void geoseq_flatmap56_remove(benchmark::State& state) {
+    size_t range = state.range(0);
+    flatmap56_t* map = flatmap56_create(0,sizeof(uint64_t));
+    for(size_t i = 0; i < range; i++){
+        uint64_t* v = (uint64_t*)flatmap56_insert(map, myarray[i]);
+        if(v) *v = myarray[i];
+    }
+    state.counters["load_factor"] = flatmap56_load_factor(map);
+    uint64_t removed_value;
+    for (auto _ : state){
+        for(size_t i = 0; i < range; i++)
+            benchmark::DoNotOptimize(flatmap56_remove(map, myarray[i], &removed_value));
+    }
+    state.counters["ns_per_entry"] = benchmark::Counter((double)(range * state.iterations()) / (double)1000000000.0, benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
+    flatmap56_destroy(map);
+}
 
-static void ska_bytell_hash_map_lookup(benchmark::State& state) {
+BENCHMARK(geoseq_flatmap56_remove)->Name("geoseq_flatmap56_remove")->DenseRange(10000, MAX_COUNT, 25000)->Unit(benchmark::kNanosecond);
+
+
+
+static void ska_bytell_lookup(benchmark::State& state) {
     size_t range = state.range(0);
     ska::bytell_hash_map<uint64_t,uint64_t> map;
     for(size_t i = 0; i < range; i++) map[myarray[i]] = i;
     for (auto _ : state){
         for(size_t i = 0; i < range; i++)
-            //map.find(myarray[i]);
-            map.at(myarray[i]);
+            benchmark::DoNotOptimize(map.at(myarray[i]));
     }
     state.counters["load_factor"] = benchmark::Counter(map.load_factor());
     state.counters["ns_per_entry"] = benchmark::Counter((double)(range * state.iterations()) / (double)1000000000.0, benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
 }
 
-BENCHMARK(ska_bytell_hash_map_lookup)->Name("ska_bytell_hash_map_lookup")->DenseRange(10000, MAX_COUNT, 25000)->Unit(benchmark::kNanosecond);
+BENCHMARK(ska_bytell_lookup)->Name("ska_bytell_lookup")->DenseRange(10000, MAX_COUNT, 25000)->Unit(benchmark::kNanosecond);
 
 
-
-static void ska_bytell_hash_map_insert(benchmark::State& state) {
+static void ska_bytell_insert(benchmark::State& state) {
     size_t range = state.range(0);
     ska::bytell_hash_map<uint64_t,uint64_t> map;
     for (auto _ : state){
@@ -73,8 +95,22 @@ static void ska_bytell_hash_map_insert(benchmark::State& state) {
     state.counters["ns_per_entry"] = benchmark::Counter((double)(range * state.iterations()) / (double)1000000000.0, benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
 }
 
-BENCHMARK(ska_bytell_hash_map_insert)->Name("ska_bytell_hash_map_insert")->DenseRange(10000, MAX_COUNT, 25000)->Unit(benchmark::kNanosecond);
+BENCHMARK(ska_bytell_insert)->Name("ska_bytell_insert")->DenseRange(10000, MAX_COUNT, 25000)->Unit(benchmark::kNanosecond);
 
+
+static void ska_bytell_remove(benchmark::State& state) {
+    size_t range = state.range(0);
+    ska::bytell_hash_map<uint64_t,uint64_t> map;
+    for(size_t i = 0; i < range; i++) map[myarray[i]] = i;
+    state.counters["load_factor"] = benchmark::Counter(map.load_factor());
+    for (auto _ : state){
+        for(size_t i = 0; i < range; i++)
+            benchmark::DoNotOptimize(map.erase(myarray[i]));
+    }
+    state.counters["ns_per_entry"] = benchmark::Counter((double)(range * state.iterations()) / (double)1000000000.0, benchmark::Counter::kIsRate | benchmark::Counter::kInvert);
+}
+
+BENCHMARK(ska_bytell_remove)->Name("ska_bytell_remove")->DenseRange(10000, MAX_COUNT, 25000)->Unit(benchmark::kNanosecond);
 
 
 

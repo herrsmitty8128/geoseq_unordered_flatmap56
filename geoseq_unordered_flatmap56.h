@@ -20,13 +20,14 @@ extern "C" {
 typedef struct UNORDERED_FLATMAP56 flatmap56_t;
 
 /**
- * @brief Allocates and initializes a flatmap56_t object.
+ * @brief Allocates and initializes a flatmap56_t object on the heap.
  * 
  * @param initial_capacity The minimum initial capacity of the table. This value is rounded up to
- *  the nearest power of 2 in the range max_bucket_count() to max_bucket_count().
+ *  the nearest power of 2 in the range min_bucket_count() to max_bucket_count().
+ * @param value_size The size (in bytes) of the type of value to be stored in the table.
  * @return flatmap56_t* on success or NULL on failure.
  */
-flatmap56_t* flatmap56_create(const uint64_t initial_capacity);
+flatmap56_t* flatmap56_create(const uint64_t initial_capacity, const uint64_t value_size);
 
 /**
  * @brief Deallocates the instance of a flatmap56_t object pointed to by map.
@@ -36,10 +37,10 @@ flatmap56_t* flatmap56_create(const uint64_t initial_capacity);
 void flatmap56_destroy(flatmap56_t* map);
 
 /**
- * @brief 
+ * @brief Calcluates and returns the current load factor of the table.
  * 
- * @param map 
- * @return float 
+ * @param map A pointer to a flatmap56_t.
+ * @return float
  */
 float flatmap56_load_factor(const flatmap56_t* map);
 
@@ -52,21 +53,22 @@ float flatmap56_load_factor(const flatmap56_t* map);
 uint64_t flatmap56_bucket_count(const flatmap56_t* map);
 
 /**
- * @brief Returns the maximum number of buckets (table size) supported by this implementation.
+ * @brief Returns the maximum number of buckets supported by this implementation.
  * 
+ * @param map A pointer to the map.
  * @return uint64_t 
  */
-uint64_t flatmap56_max_bucket_count();
+uint64_t flatmap56_max_bucket_count(const flatmap56_t* map);
 
 /**
- * @brief Returns the minimum number of buckets (table size) supported by this implementation.
+ * @brief Returns the minimum number of buckets supported by this implementation.
  * 
  * @return uint64_t 
  */
 uint64_t flatmap56_min_bucket_count();
 
 /**
- * @brief Returns the number of elements in the table.
+ * @brief Returns the current number of elements in the table.
  * 
  * @param map A pointer to the flatmap56_t object.
  * @return uint64_t 
@@ -74,34 +76,38 @@ uint64_t flatmap56_min_bucket_count();
 uint64_t flatmap56_size(const flatmap56_t* map);
 
 /**
- * @brief Attempts to find the bucket in the hash table that is associated with key. Returns the corresponding value if successful, otherwise zero is returned upon failure.
+ * @brief Attempts to find the bucket in the hash table that is associated with key. Returns a
+ * pointer to the corresponding value if successful, otherwise NULL is returned upon failure.
  * 
  * @param map A pointer to the flatmap56_t object.
  * @param key The key to lookup.
- * @return uint64_t 
+ * @return void*
  */
-uint64_t flatmap56_lookup(const flatmap56_t* map, const uint64_t key);
+void* flatmap56_lookup(const flatmap56_t* map, const uint64_t key);
 
 /**
- * @brief Removes the key-value pair associated with key and returns its corresponding value.
- * 
- * @param map A pointer to the flatmap56_t object.
- * @param key The key to lookup.
- * @return uint64_t 
- */
-uint64_t flatmap56_remove(flatmap56_t* map, const uint64_t key);
-
-/**
- * @brief Adds a new key-value pair to the hash table. If the hash table already contains the key, 
- * then the current value is replaced with the new value.
+ * @brief Inserts a new key-value pair into the table. If the table already contains the
+ * key, then the current value is replaced with the new value. Regardless, a pointer to
+ * the value in the table is returned on success. Otherwise, NULL is returned on failure.
  * 
  * @param map The flatmap56_t object to insert the key-value pair into.
  * @param key The key.
  * @param value The value.
- * @return true on success
- * @return false on failure
+ * @return bool
  */
-bool flatmap56_insert(flatmap56_t* map, const uint64_t key, const uint64_t value);
+void* flatmap56_insert(flatmap56_t* map, const uint64_t key);
+
+/**
+ * @brief Removes the key-value pair associated with key. If the key exists in the table
+ * then the corresponding value is copied into the buffer before it is removed. Returns
+ * true if the key exists in the table, otherwise false is returned.
+ * 
+ * @param map A pointer to the flatmap56_t object.
+ * @param key The key to lookup.
+ * @param value A buffer into which the corresponding value is copied, if it is not NULL.
+ * @return bool True if the key was found. Otherwise return false. 
+ */
+bool flatmap56_remove(flatmap56_t* map, const uint64_t key, void* value);
 
 #ifdef __cplusplus
 };
