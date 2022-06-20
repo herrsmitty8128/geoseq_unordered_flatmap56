@@ -6,7 +6,7 @@
 |--------|-----------|
 |flatmap56_t* flatmap56_create(const uint64_t initial_capacity, const uint64_t value_size);|Allocates and initializes a flatmap56_t object on the heap. Returns a pointer to the new object on success or NULL on failure.|
 |void flatmap56_destroy(flatmap56_t* map);|Deallocates the instance of a flatmap56_t object pointed to by *map*.|
-|float flatmap56_load_factor(const flatmap56_t* map);|Calcluates and returns the current load factor of the table.|
+|float flatmap56_load_factor(const flatmap56_t* map);|Calculates and returns the current load factor of the table.|
 |uint64_t flatmap56_bucket_count(const flatmap56_t* map);|Returns the current number of buckets in the hash table.|
 |uint64_t flatmap56_max_bucket_count(const flatmap56_t* map);|Returns the maximum number of buckets supported by this implementation.|
 |uint64_t flatmap56_min_bucket_count();|Returns the minimum number of buckets supported by this implementation.|

@@ -38,7 +38,7 @@ flatmap56_t* flatmap56_create(const uint64_t initial_capacity, const uint64_t va
 void flatmap56_destroy(flatmap56_t* map);
 
 /**
- * @brief Calcluates and returns the current load factor of the table.
+ * @brief Calculates and returns the current load factor of the table.
  * 
  * @param map A pointer to a flatmap56_t.
  * @return float
