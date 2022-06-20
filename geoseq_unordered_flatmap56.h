@@ -20,12 +20,13 @@ extern "C" {
 typedef struct UNORDERED_FLATMAP56 flatmap56_t;
 
 /**
- * @brief Allocates and initializes a flatmap56_t object on the heap.
+ * @brief Allocates and initializes a flatmap56_t object on the heap. Returns a pointer to the new 
+ * object on success or NULL on failure.
  * 
  * @param initial_capacity The minimum initial capacity of the table. This value is rounded up to
  *  the nearest power of 2 in the range min_bucket_count() to max_bucket_count().
  * @param value_size The size (in bytes) of the type of value to be stored in the table.
- * @return flatmap56_t* on success or NULL on failure.
+ * @return flatmap56_t*
  */
 flatmap56_t* flatmap56_create(const uint64_t initial_capacity, const uint64_t value_size);
 
@@ -105,7 +106,7 @@ void* flatmap56_insert(flatmap56_t* map, const uint64_t key);
  * @param map A pointer to the flatmap56_t object.
  * @param key The key to lookup.
  * @param value A buffer into which the corresponding value is copied, if it is not NULL.
- * @return bool True if the key was found. Otherwise return false. 
+ * @return bool 
  */
 bool flatmap56_remove(flatmap56_t* map, const uint64_t key, void* value);
 
