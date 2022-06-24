@@ -16,7 +16,7 @@ int main(){
 
     int i,j,buff,*value;
     int r = EXIT_SUCCESS;
-    flatmap56_t* map = flatmap56_create(0, sizeof(int));
+    flatmap56_t* map = flatmap56_create(0,sizeof(int));
 
     srand(time(0));
     //srand(0);
@@ -39,7 +39,7 @@ int main(){
         fprintf(stdout, "Initial State: %ld\t%ld,\t%f\n", flatmap56_bucket_count(map), flatmap56_size(map), flatmap56_load_factor(map));
         
         for(i = 0; i < SAMPLE_SIZE; i++){
-            value = flatmap56_insert(map, samples[i]);
+            value = (int*)flatmap56_insert(map, samples[i]);
             if(!value){
                 fprintf(stderr, "Insertion failed [%d] %d\n", i, samples[i]);
                 r = EXIT_FAILURE;
@@ -52,13 +52,13 @@ int main(){
                 goto end_test;
             }
             for(j = 0; j < i; j++){
-                value = flatmap56_lookup(map, samples[j]);
+                value = (int*)flatmap56_lookup(map, samples[j]);
                 if(!value){
                     fprintf(stderr, "Lookup failed [%d] [%d] %d\n", i, j, samples[j]);
                     goto end_test;
                 }
                 if(*value != samples[j]){
-                    fprintf(stderr, "Lookup value value not correct [%d] %d [%d] %d\n", i, *value, j, samples[j]);
+                    fprintf(stderr, "Lookup value not correct [%d] %d [%d] %d\n", i, *value, j, samples[j]);
                     goto end_test;
                 }
             }

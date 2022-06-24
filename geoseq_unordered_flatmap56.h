@@ -17,7 +17,27 @@
 extern "C" {
 #endif
 
-typedef struct UNORDERED_FLATMAP56 flatmap56_t;
+#define MAX_PROBES          128
+
+typedef struct {
+    struct {
+        uint64_t next_probe : 7;  // next index into unordered_flatmap56::probes[]
+        uint64_t direct_hit : 1;  // direct hit or not?
+        uint64_t unique_key : 56; // unique key value
+    };
+    uint8_t value[]; // bytes to store the data value
+}bucket_t;
+
+typedef struct {
+    uint64_t  hash_shift;
+    uint64_t  num_entries;
+    uint64_t  num_buckets;
+    uint64_t  table_mask;
+    uint64_t  bucket_size;
+    uint64_t  value_size;
+    uint64_t  probes[MAX_PROBES]; // first and last elements are reserved
+    uint8_t*  buckets;
+}flatmap56_t;
 
 /**
  * @brief Allocates and initializes a flatmap56_t object on the heap. Returns a pointer to the new 

@@ -9,17 +9,18 @@
 #include "geoseq_unordered_flatmap56.h"
 
 
-#define MAX_COUNT 10000000
-uint64_t myarray[MAX_COUNT];
+#define MAX_COUNT 5000000
+int myarray[MAX_COUNT];
 
 
 static void geoseq_flatmap56_insert(benchmark::State& state) {
     size_t range = state.range(0);
-    flatmap56_t* map = flatmap56_create(0,sizeof(uint64_t));
+    int *value;
+    flatmap56_t* map = flatmap56_create(0,sizeof(int));
     for (auto _ : state){
         for(size_t i = 0; i < range; i++){
-            uint64_t* v = (uint64_t*)flatmap56_insert(map, myarray[i]);
-            if(v) *v = myarray[i];
+            value = (int*)flatmap56_insert(map, myarray[i]);
+            *value = myarray[i];
         }
     }
     state.counters["load_factor"] = flatmap56_load_factor(map);
@@ -32,10 +33,11 @@ BENCHMARK(geoseq_flatmap56_insert)->Name("geoseq_flatmap56_insert")->DenseRange(
 
 static void geoseq_flatmap56_lookup(benchmark::State& state) {
     size_t range = state.range(0);
-    flatmap56_t* map = flatmap56_create(0,sizeof(uint64_t));
+    int *value;
+    flatmap56_t* map = flatmap56_create(0,sizeof(int));
     for(size_t i = 0; i < range; i++){
-        uint64_t* v = (uint64_t*)flatmap56_insert(map, myarray[i]);
-        if(v) *v = myarray[i];
+        value = (int*)flatmap56_insert(map, myarray[i]);
+        *value = myarray[i];
     }
     for (auto _ : state){
         for(size_t i = 0; i < range; i++)
@@ -49,15 +51,16 @@ static void geoseq_flatmap56_lookup(benchmark::State& state) {
 BENCHMARK(geoseq_flatmap56_lookup)->Name("geoseq_flatmap56_lookup")->DenseRange(10000, MAX_COUNT, 25000)->Unit(benchmark::kNanosecond);
 
 
+
 static void geoseq_flatmap56_remove(benchmark::State& state) {
     size_t range = state.range(0);
-    flatmap56_t* map = flatmap56_create(0,sizeof(uint64_t));
+    int removed_value,*value;
+    flatmap56_t* map = flatmap56_create(0,sizeof(int));
     for(size_t i = 0; i < range; i++){
-        uint64_t* v = (uint64_t*)flatmap56_insert(map, myarray[i]);
-        if(v) *v = myarray[i];
+        value = (int*)flatmap56_insert(map, myarray[i]);
+        *value = myarray[i];
     }
     state.counters["load_factor"] = flatmap56_load_factor(map);
-    uint64_t removed_value;
     for (auto _ : state){
         for(size_t i = 0; i < range; i++)
             benchmark::DoNotOptimize(flatmap56_remove(map, myarray[i], &removed_value));
@@ -72,7 +75,7 @@ BENCHMARK(geoseq_flatmap56_remove)->Name("geoseq_flatmap56_remove")->DenseRange(
 
 static void ska_bytell_lookup(benchmark::State& state) {
     size_t range = state.range(0);
-    ska::bytell_hash_map<uint64_t,uint64_t> map;
+    ska::bytell_hash_map<int,int> map;
     for(size_t i = 0; i < range; i++) map[myarray[i]] = i;
     for (auto _ : state){
         for(size_t i = 0; i < range; i++)
@@ -87,7 +90,7 @@ BENCHMARK(ska_bytell_lookup)->Name("ska_bytell_lookup")->DenseRange(10000, MAX_C
 
 static void ska_bytell_insert(benchmark::State& state) {
     size_t range = state.range(0);
-    ska::bytell_hash_map<uint64_t,uint64_t> map;
+    ska::bytell_hash_map<int,int> map;
     for (auto _ : state){
         for(size_t i = 0; i < range; i++) map[myarray[i]] = i;
     }
@@ -100,7 +103,7 @@ BENCHMARK(ska_bytell_insert)->Name("ska_bytell_insert")->DenseRange(10000, MAX_C
 
 static void ska_bytell_remove(benchmark::State& state) {
     size_t range = state.range(0);
-    ska::bytell_hash_map<uint64_t,uint64_t> map;
+    ska::bytell_hash_map<int,int> map;
     for(size_t i = 0; i < range; i++) map[myarray[i]] = i;
     state.counters["load_factor"] = benchmark::Counter(map.load_factor());
     for (auto _ : state){
