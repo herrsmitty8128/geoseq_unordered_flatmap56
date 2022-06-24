@@ -57,9 +57,9 @@ static inline bool flatmap56_initialize(flatmap56_t* map, uint64_t capacity, con
     map->value_size = value_size;
     map->bucket_size = sizeof(bucket_t) + value_size;
     if(map->bucket_size & 7) map->bucket_size = ((map->bucket_size >> 3) << 3) + 8; //round up to nearest multiple of 8
-    map->buckets = (uint8_t*)calloc(map->num_buckets, map->bucket_size); // try to allocate an array
-    if(map->buckets == NULL) return false; // return NULL if calloc failed
-    return true; // return to the caller
+    map->buckets = (uint8_t*)calloc(map->num_buckets, map->bucket_size);
+    if(map->buckets == NULL) return false;
+    return true;
 }
 
 inline flatmap56_t* flatmap56_create(const uint64_t initial_capacity, const uint64_t value_size) {
@@ -115,16 +115,6 @@ inline void* flatmap56_lookup(const flatmap56_t* map, const uint64_t key) {
     return NULL;
 }
 
-/*
-static inline void* flatmap56_emplace_empty(flatmap56_t* map, bucket_t* b, const uint64_t key, const uint8_t next, const uint8_t direct){
-    b->unique_key = key;
-    b->next_probe = next;
-    b->direct_hit = direct;
-    map->num_entries++;
-    return b->value;
-}
-*/
-
 static inline void* flatmap56_emplace_direct(flatmap56_t* map, const uint64_t key, const uint64_t h){
 
     bucket_t* temp;
@@ -150,12 +140,10 @@ static inline void* flatmap56_emplace_direct(flatmap56_t* map, const uint64_t ke
     }
 
     if(empty){
-        //x = predecessor->next_probe;
         EMPLACE_EMPTY(empty, key, x, 0);
         predecessor->next_probe = y;
         map->num_entries++;
         return empty->value;
-        //return flatmap56_emplace_empty(map,empty,key,x,0);
     }
 
     return NULL;
@@ -189,9 +177,6 @@ static inline void* flatmap56_emplace_indirect(flatmap56_t* map, const uint64_t 
                 e = BUCKET(map,CALC_INDEX(map,h2,y));
                 if(e->next_probe == EMPTY_SLOT){
                     empty = e;
-                    /*empty->direct_hit = 0;
-                    empty->next_probe = z;
-                    empty->unique_key = b->unique_key;*/
                     EMPLACE_EMPTY(empty,b->unique_key,z,0);
                     memcpy(empty->value, b->value, map->value_size);
                     temp->next_probe = y;
@@ -201,7 +186,6 @@ static inline void* flatmap56_emplace_indirect(flatmap56_t* map, const uint64_t 
         }
 
         if(predecessor && empty){
-            //return flatmap56_emplace_empty(map,b,key,NO_MORE_PROBES,1);
             EMPLACE_EMPTY(b, key, NO_MORE_PROBES, 1);
             map->num_entries++;
             return b->value;
@@ -215,7 +199,6 @@ static inline void* flatmap56_emplace(flatmap56_t* map, const uint64_t key) {
     uint64_t  h = HASH(map,key);
     bucket_t* b = BUCKET(map,h);
     if(b->next_probe == EMPTY_SLOT){
-        //return flatmap56_emplace_empty(map,b,key,NO_MORE_PROBES,1);
         EMPLACE_EMPTY(b,key,NO_MORE_PROBES,1);
         map->num_entries++;
         return b->value;
@@ -265,7 +248,6 @@ inline bool flatmap56_remove(flatmap56_t* map, const uint64_t key, void* value) 
     uint64_t  h = HASH(map,key);
     bucket_t* b = BUCKET(map,h);
     bucket_t* b2 = NULL;
-    //uint64_t  p;
 
     if(b->direct_hit){
         for(;;){
@@ -281,8 +263,6 @@ inline bool flatmap56_remove(flatmap56_t* map, const uint64_t key, void* value) 
                     memcpy(b->value, b2->value, map->value_size);
                     b = b2;
                 }
-                //b->direct_hit = 0;
-                //b->next_probe = EMPTY_SLOT;
                 memset(b,0,map->bucket_size);
                 map->num_entries--;
                 // shrink the table if the load factor is less than 37.5%
@@ -290,10 +270,6 @@ inline bool flatmap56_remove(flatmap56_t* map, const uint64_t key, void* value) 
                 return true;
             }
             b2 = b; // remember the previous bucket_t
-            /*p = b->next_probe;
-            if(p == NO_MORE_PROBES) break;
-            p = CALC_INDEX(map,h,p);
-            b = BUCKET(map,p);*/
             if(b->next_probe == NO_MORE_PROBES) break;
             b = BUCKET(map,CALC_INDEX(map,h,b->next_probe));
         }
